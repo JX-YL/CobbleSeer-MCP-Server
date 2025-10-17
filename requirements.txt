@@ -1,0 +1,47 @@
+# CobbleSeer MCP Server - Python依赖
+# 适用于 Python 3.11+
+
+# ==================== 核心框架 ====================
+fastapi>=0.104.0              # HTTP Server
+fastmcp>=0.5.0                # 简化的MCP框架（推荐）
+uvicorn[standard]>=0.24.0     # ASGI服务器
+websockets>=12.0              # WebSocket支持
+
+# ==================== AI相关 ====================
+# 云端AI
+anthropic>=0.18.0             # Claude API（推荐）
+openai>=1.0.0                 # OpenAI API（可选）
+
+# 本地AI
+ollama>=0.1.0                 # Ollama客户端（可选）
+
+# ==================== RAG相关 ====================
+chromadb>=0.4.0               # 向量数据库
+sentence-transformers>=2.2.0  # 嵌入模型（sentence-transformers/all-MiniLM-L6-v2）
+
+# ==================== 数据处理 ====================
+pydantic>=2.5.0               # 数据验证和模型
+pydantic-settings>=2.0.0      # 配置管理
+sqlalchemy>=2.0.0             # 数据库ORM
+aiosqlite>=0.19.0             # 异步SQLite
+
+# ==================== 工具库 ====================
+pyyaml>=6.0                   # YAML配置文件
+python-dotenv>=1.0.0          # 环境变量管理
+python-multipart>=0.0.6       # 文件上传支持
+aiofiles>=23.0.0              # 异步文件操作
+
+# ==================== JSON处理 ====================
+jsonschema>=4.20.0            # JSON Schema验证
+orjson>=3.9.0                 # 高性能JSON解析
+
+# ==================== 日志和监控 ====================
+loguru>=0.7.0                 # 优雅的日志库
+rich>=13.0.0                  # 美化终端输出
+
+# ==================== 开发工具（可选） ====================
+# pytest>=7.4.0               # 单元测试
+# pytest-asyncio>=0.21.0      # 异步测试
+# black>=23.0.0               # 代码格式化
+# ruff>=0.1.0                 # 代码检查
+

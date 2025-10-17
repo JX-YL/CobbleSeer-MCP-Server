@@ -1,0 +1,107 @@
+# CobbleSeer MCP Server - 配置文件
+# 说明：首次使用请修改此文件，或运行配置向导
+
+# ==================== AI配置 ====================
+ai:
+  # 模式选择：cloud（云端）| local（本地）| hybrid（混合）
+  mode: "cloud"
+  
+  # 云端AI配置（Claude API）
+  cloud:
+    provider: "claude"  # claude | openai
+    api_key: ""  # 在此填入您的API Key，或使用环境变量 ${COBBLESEER_API_KEY}
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 2000
+    temperature: 0.7
+    
+    # 订阅配额管理（可选）
+    quota:
+      enabled: false
+      user_id: ""
+      plan: "free_trial"  # free_trial | basic | pro | custom
+  
+  # 本地AI配置（Ollama）
+  local:
+    model: "qwen3:7b"  # 推荐 qwen3:7b（12GB运存）或 qwen3:14b（20GB运存）
+    embedding_model: "qwen3-embedding"  # 向量化模型
+    ollama_host: "http://localhost:11434"
+    timeout: 60
+    num_predict: 1000
+
+# ==================== RAG配置 ====================
+rag:
+  enabled: true  # 是否启用RAG检索
+  collection_name: "cobblemon_reference"
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"  # HuggingFace模型
+  top_k: 5  # 检索数量
+  similarity_threshold: 0.7  # 相似度阈值
+  
+  # 参考库路径（相对于项目根目录）
+  reference_paths:
+    moves: "../../../Reference document/Cobblemon/技能参考"
+    abilities: "../../../Reference document/Cobblemon/特性参考"
+    pokemon: "../../../Reference document/Cobblemon/宝可梦参考包"
+
+# ==================== 数据库配置 ====================
+database:
+  url: "sqlite:///data/projects.db"  # SQLite数据库路径
+  echo: false  # 是否打印SQL日志
+  pool_size: 5
+
+# ==================== 服务器配置 ====================
+server:
+  host: "127.0.0.1"
+  port: 8765
+  
+  # CORS配置（允许Web UI访问）
+  cors_origins:
+    - "http://localhost:5173"  # Vite开发服务器
+    - "http://127.0.0.1:5173"
+  
+  # WebSocket配置（实时进度推送）
+  websocket:
+    enabled: true
+    ping_interval: 30
+
+# ==================== 文件生成配置 ====================
+builder:
+  # 默认生成配置
+  defaults:
+    namespace: "cobbleseer"  # 资源包命名空间
+    pack_format: 48  # Minecraft 1.21.1
+    
+  # 输出路径
+  output_dir: "output"
+  temp_dir: "temp"
+
+# ==================== 验证配置 ====================
+validator:
+  strict_mode: true  # 严格模式（推荐）
+  schema_dir: "schemas"  # JSON Schema目录
+  
+  # 验证规则
+  rules:
+    check_duplicate_ids: true
+    check_type_validity: true
+    check_ability_validity: true
+
+# ==================== 日志配置 ====================
+logging:
+  level: "INFO"  # DEBUG | INFO | WARNING | ERROR
+  format: "rich"  # rich（彩色） | simple（纯文本）
+  file: "logs/cobbleseer.log"
+  rotation: "100 MB"
+  retention: "30 days"
+
+# ==================== 缓存配置 ====================
+cache:
+  enabled: true
+  ttl: 3600  # 缓存有效期（秒）
+  max_size: 1000  # 最大缓存条目数
+
+# ==================== 开发配置 ====================
+development:
+  debug: false
+  reload: false  # 代码变更时自动重载
+  profile: false  # 性能分析
+

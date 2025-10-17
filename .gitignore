@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv/
+
+# 环境变量
+.env
+.env.local
+
+# 运行时数据
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# 向量数据库
+chroma_db/
+*.chroma
+
+# 缓存
+cache/
+*.cache
+.cache/
+
+# 日志
+logs/
+*.log
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 模型文件（太大）
+*.safetensors
+*.bin
+*.pt
+*.onnx
+
