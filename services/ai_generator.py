@@ -26,15 +26,17 @@ class AIGenerator:
     3. 混合模式（智能切换）
     """
     
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, rag_service=None):
         """
         初始化AI生成器
         
         Args:
             config: 配置字典
+            rag_service: RAG服务实例（可选）
         """
         self.config = config
-        self.mode = config.get("ai", {}).get("mode", "cloud")
+        self.mode = config.get("ai", {}).get("mode", "local")
+        self.rag_service = rag_service
         
         # 初始化云端客户端
         if self.mode in ["cloud", "hybrid"]:
@@ -90,10 +92,10 @@ class AIGenerator:
     async def generate_move(
         self, 
         description: str, 
-        references: List[dict] = None
-    ) -> str:
+        auto_reference: bool = True
+    ) -> Dict[str, Any]:
         """
-        生成技能代码（自动选择最佳AI）
+        生成技能代码（自动选择最佳AI + RAG检索）
         
         混合模式逻辑：
         - 简单描述（<50字）→ 尝试本地AI
@@ -102,32 +104,48 @@ class AIGenerator:
         
         Args:
             description: 技能描述
-            references: 参考技能列表
+            auto_reference: 是否自动RAG检索参考
         
         Returns:
-            技能代码（JavaScript对象字符串）
+            包含生成结果的字典
         """
-        if self.mode == "cloud":
-            return await self._generate_cloud(description, references or [])
+        # 获取参考技能
+        references = []
+        if auto_reference and self.rag_service:
+            try:
+                references = await self.rag_service.search_moves(description, top_k=3)
+            except Exception as e:
+                logger.warning(f"RAG检索失败：{e}")
         
-        elif self.mode == "local":
-            return await self._generate_local(description, references or [])
-        
-        elif self.mode == "hybrid":
-            # 智能判断
-            if len(description) < 50:
-                try:
-                    logger.info("  💻 使用本地AI...")
-                    return await self._generate_local(description, references or [])
-                except Exception as e:
-                    logger.warning(f"  ⚠️  本地AI失败，切换云端：{e}")
-                    return await self._generate_cloud(description, references or [])
+        try:
+            if self.mode == "cloud":
+                code = await self._generate_cloud(description, references)
+            elif self.mode == "local":
+                code = await self._generate_local(description, references)
+            elif self.mode == "hybrid":
+                if len(description) < 50:
+                    try:
+                        logger.info("  使用本地AI...")
+                        code = await self._generate_local(description, references)
+                    except Exception as e:
+                        logger.warning(f"  本地AI失败，切换云端：{e}")
+                        code = await self._generate_cloud(description, references)
+                else:
+                    logger.info("  使用云端AI...")
+                    code = await self._generate_cloud(description, references)
             else:
-                logger.info("  ☁️  使用云端AI...")
-                return await self._generate_cloud(description, references or [])
-        
-        else:
-            raise ValueError(f"未知的AI模式: {self.mode}")
+                raise ValueError(f"未知的AI模式: {self.mode}")
+            
+            # 解析代码提取字段
+            return self._parse_move_code(code, description)
+            
+        except Exception as e:
+            logger.error(f"生成技能失败：{e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "code": ""
+            }
     
     async def _generate_cloud(
         self, 
@@ -263,29 +281,216 @@ class AIGenerator:
         
         return code
     
-    async def generate_abilities(
-        self, 
-        descriptions: List[str]
-    ) -> List[dict]:
+    def _parse_move_code(self, code: str, description: str) -> Dict[str, Any]:
         """
-        生成特性代码
+        解析生成的技能代码，提取关键字段
         
         Args:
-            descriptions: 特性描述列表
+            code: 生成的JavaScript代码
+            description: 原始描述
         
         Returns:
-            生成的特性代码列表
+            包含解析结果的字典
         """
-        # TODO: 实现特性生成（类似generate_move）
-        logger.warning("⚠️  特性生成功能开发中")
+        import re
         
-        return [
-            {
-                "description": desc,
-                "code": "// TODO: 实现特性生成",
-                "valid": False,
-                "errors": ["功能开发中"]
+        try:
+            result = {
+                "success": True,
+                "code": code,
+                "description": description
             }
-            for desc in descriptions
-        ]
+            
+            # 提取 name
+            name_match = re.search(r'name:\s*["\']([^"\']+)["\']', code)
+            if name_match:
+                result["name"] = name_match.group(1)
+            
+            # 提取 type
+            type_match = re.search(r'type:\s*["\']([^"\']+)["\']', code)
+            if type_match:
+                result["type"] = type_match.group(1)
+            
+            # 提取 category
+            cat_match = re.search(r'category:\s*["\']([^"\']+)["\']', code)
+            if cat_match:
+                result["category"] = cat_match.group(1)
+            
+            # 提取 basePower
+            power_match = re.search(r'basePower:\s*(\d+)', code)
+            if power_match:
+                result["basePower"] = int(power_match.group(1))
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"解析技能代码失败：{e}")
+            return {
+                "success": True,
+                "code": code,
+                "description": description,
+                "name": "Unknown",
+                "type": "Normal",
+                "category": "Physical",
+                "basePower": 0
+            }
+    
+    async def generate_ability(
+        self, 
+        description: str, 
+        auto_reference: bool = True
+    ) -> Dict[str, Any]:
+        """
+        生成特性代码（自动选择最佳AI + RAG检索）
+        
+        Args:
+            description: 特性描述
+            auto_reference: 是否自动RAG检索参考
+        
+        Returns:
+            包含生成结果的字典
+        """
+        # 获取参考特性
+        references = []
+        if auto_reference and self.rag_service:
+            try:
+                references = await self.rag_service.search_abilities(description, top_k=3)
+            except Exception as e:
+                logger.warning(f"RAG检索失败：{e}")
+        
+        try:
+            # 构建特性生成的Prompt
+            prompt = self._build_ability_prompt(description, references)
+            
+            if self.mode == "local":
+                code = await self._generate_local_ability(prompt)
+            else:
+                # 云端模式暂未实现，返回错误
+                logger.warning("特性生成暂只支持本地模式")
+                return {
+                    "success": False,
+                    "error": "特性生成暂只支持本地模式",
+                    "code": ""
+                }
+            
+            # 解析代码提取字段
+            return self._parse_ability_code(code, description)
+            
+        except Exception as e:
+            logger.error(f"生成特性失败：{e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "code": ""
+            }
+    
+    def _build_ability_prompt(
+        self, 
+        description: str, 
+        references: List[dict]
+    ) -> str:
+        """构建特性生成Prompt"""
+        
+        ref_text = ""
+        if references:
+            ref_text = "\n\n参考以下相似特性：\n"
+            for ref in references[:3]:
+                ref_text += f"- {ref.get('name', '')}: {ref.get('content', '')}\n"
+        
+        return f"""基于以下描述生成Cobblemon特性（Showdown格式JavaScript）。
+
+用户需求：
+{description}
+{ref_text}
+
+要求：
+1. 返回完整的JavaScript对象（不要exports语句）
+2. 必须包含：num（负数）、name、rating、shortDesc
+3. 数值合理平衡
+4. 直接输出代码，不要任何解释
+
+示例格式：
+{{
+  num: -10001,
+  name: "adaptability",
+  rating: 4,
+  shortDesc: "This Pokemon's moves that match its types have 1.5x power."
+}}
+
+请生成：
+"""
+    
+    async def _generate_local_ability(self, prompt: str) -> str:
+        """本地AI生成特性"""
+        
+        if not self.local_client:
+            raise RuntimeError("本地AI客户端未初始化")
+        
+        try:
+            response = await self.local_client.chat(
+                model=self.local_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "你是一个Cobblemon特性设计师。生成JavaScript代码，Showdown格式。只输出代码，不要解释。"
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                options={
+                    "temperature": 0.7,
+                    "num_predict": 500
+                }
+            )
+            
+            code = response["message"]["content"]
+            return self._extract_code(code)
+        
+        except Exception as e:
+            logger.error(f"本地AI生成特性失败：{e}")
+            raise
+    
+    def _parse_ability_code(self, code: str, description: str) -> Dict[str, Any]:
+        """
+        解析生成的特性代码，提取关键字段
+        
+        Args:
+            code: 生成的JavaScript代码
+            description: 原始描述
+        
+        Returns:
+            包含解析结果的字典
+        """
+        import re
+        
+        try:
+            result = {
+                "success": True,
+                "code": code,
+                "description": description
+            }
+            
+            # 提取 name
+            name_match = re.search(r'name:\s*["\']([^"\']+)["\']', code)
+            if name_match:
+                result["name"] = name_match.group(1)
+            
+            # 提取 rating
+            rating_match = re.search(r'rating:\s*(\d+)', code)
+            if rating_match:
+                result["rating"] = int(rating_match.group(1))
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"解析特性代码失败：{e}")
+            return {
+                "success": True,
+                "code": code,
+                "description": description,
+                "name": "Unknown",
+                "rating": 0
+            }
 
