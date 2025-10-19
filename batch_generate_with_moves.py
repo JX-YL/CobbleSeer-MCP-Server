@@ -112,7 +112,6 @@ for i, pokemon_data in enumerate(pokemons, 1):
     result = builder.build_package(
         project_name=f"{name}_v2",
         files=files,
-        output_format="zip"
     )
     
     if result["success"]:

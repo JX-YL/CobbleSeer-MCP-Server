@@ -83,7 +83,7 @@ class MoveGenerator:
             'type': type,
             'category': category,
             'basePower': base_power,
-            'accuracy': accuracy if accuracy <= 100 else True,
+            'accuracy': True if accuracy == 0 else accuracy,  # 0表示必中
             'pp': pp,
             'priority': priority,
             'flags': self._generate_flags(category, contact),
@@ -179,6 +179,11 @@ class MoveGenerator:
                 # 调整能力变化倍数
                 if value != 1:
                     move['boosts'] = {k: v * value for k, v in move['boosts'].items()}
+                # 根据效果类型确定目标
+                if effect.startswith('boost_'):
+                    move['target'] = 'self'  # 提升自己
+                elif effect.startswith('lower_'):
+                    move['target'] = 'normal'  # 降低对手
             else:
                 # 攻击技能作为追加效果
                 move['secondary'] = {

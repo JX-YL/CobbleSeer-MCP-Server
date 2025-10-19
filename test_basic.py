@@ -187,7 +187,6 @@ async def test_build_package():
         result = await mcp.tools["build_package"](
             project_name="test_project",
             files=files,
-            output_format="zip"
         )
         
         if result["success"]:

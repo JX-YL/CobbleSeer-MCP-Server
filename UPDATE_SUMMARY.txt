@@ -1,0 +1,141 @@
+========================================
+CobbleSeer MCP Server - 更新总结
+v1.1.1 (2025-01-19)
+========================================
+
+【今日更新】
+
+1. 移除压缩包功能 ✅
+   - 只生成文件夹格式数据包
+   - 避免Windows压缩的编码问题
+   - 生成速度更快
+
+2. 智能依赖检测 ✅
+   - 自动识别所需模组
+   - 在README中清晰标注
+   - 区分原版功能和扩展功能
+
+3. 智能换行功能 ✅
+   - 自动在合适位置添加空格
+   - 支持游戏内自动换行
+   - 避免文本显示不全
+
+【智能换行详情】
+
+原理：
+- 游戏使用空格作为"软换行点"
+- 空格不仅在标点后，还在语义断点
+- 游戏根据显示宽度自动选择换行位置
+
+当前实现：
+- 标点后自动添加空格
+- 常见词（攻击、进行、对手等）后添加空格
+- 足够大部分使用场景
+
+示例：
+原文：用电击攻击对手。有时会让对手陷入麻痹状态。
+格式化：用电击 攻击 对手。 有时会让对手 陷入麻痹状态。
+         ↑    ↑    ↑    ↑         ↑    ↑
+
+【文件更新】
+
+核心代码：
+✅ services/builder.py
+   - 移除zip相关代码
+   - 新增 format_text_for_display() 方法
+   - 新增 detect_dependencies() 方法
+   - 优化 build_lang_zh/en() 方法
+
+✅ server.py
+   - 移除 output_format 参数
+   - 简化 build_package 工具接口
+
+文档：
+✅ README.md - 添加v1.1.0优化说明
+✅ CHANGELOG.md - 详细变更记录
+✅ OPTIMIZATION_SUMMARY.md - 优化总结
+✅ SMART_LINEBREAK_FEATURE.md - 换行功能说明
+✅ LINEBREAK_GUIDE.md - 换行使用指南
+✅ LINEBREAK_SOLUTION.txt - 快速参考
+
+测试：
+✅ test_optimization.py - 优化功能测试
+✅ test_text_formatting.py - 基础格式化测试
+✅ test_improved_formatting.py - 改进格式化测试
+
+【使用方式】
+
+无需任何改变！所有功能自动应用：
+
+```python
+# 使用MCP工具
+await create_pokemon(name="testmon", ...)
+# 生成的语言文件已自动格式化
+
+# 使用Builder
+builder = Builder(config)
+files = builder.build_all(pokemon_data)
+# 自动包含换行空格和依赖检测
+```
+
+【测试数据包】
+
+已更新的数据包：
+- output/step2_with_moves/ - 18技能测试包
+- output/Testmon_Complete_DataPack/ - 完整数据包
+- output/Testmon_Final_With_Linebreak/ - 最终版本
+- output/test_optimization/ - 测试输出
+
+所有数据包都已应用新功能。
+
+【注意事项】
+
+1. 换行格式化
+   - 自动格式化足够大部分场景
+   - 如需完美效果，可手动调整
+   - 参考：LINEBREAK_GUIDE.md
+
+2. 破坏性变更
+   - build_package 不再支持 output_format 参数
+   - 只生成文件夹，不生成zip
+
+3. 迁移指南
+   旧代码：
+   build_package(name, files, output_format="zip")
+   
+   新代码：
+   build_package(name, files)
+   # 永远返回文件夹
+
+【下一步】
+
+当前版本已经完成所有核心优化！
+
+如需进一步改进：
+1. 集成jieba进行完整中文分词
+2. 添加实时预览功能
+3. 支持自定义断点词库
+
+【帮助与文档】
+
+- 总体说明：README.md
+- 换行指南：LINEBREAK_GUIDE.md
+- 优化详情：OPTIMIZATION_SUMMARY.md
+- 变更日志：CHANGELOG.md
+
+【测试确认】
+
+✅ 依赖检测测试通过
+✅ 文件夹生成测试通过
+✅ 文本格式化测试通过
+✅ README生成测试通过
+
+所有功能正常工作！
+
+========================================
+制作者：江下犹泷
+日期：2025-01-19
+版本：v1.1.1
+状态：✅ 稳定版本，可直接使用
+========================================
+

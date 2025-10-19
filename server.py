@@ -456,27 +456,25 @@ async def validate_package(files: dict) -> dict:
 @mcp.tool()
 async def build_package(
     project_name: str,
-    files: dict,
-    output_format: str = "zip"
+    files: dict
 ) -> dict:
     """
-    构建并打包资源包
+    构建资源包（文件夹格式，无需压缩）
     
     Args:
         project_name: 项目名称
         files: 文件内容字典
-        output_format: 输出格式（zip/folder）
     
     Returns:
-        打包结果
+        构建结果（包含依赖信息）
     """
-    logger.info(f"📦 构建资源包：{project_name} ({output_format})")
+    logger.info(f"📦 构建资源包：{project_name}")
     
     try:
         from services.builder import Builder
         
         builder = Builder(config)
-        result = builder.build_package(project_name, files, output_format)
+        result = builder.build_package(project_name, files)
         
         logger.info(f"✅ 资源包构建完成：{result['output_path']}")
         return result
